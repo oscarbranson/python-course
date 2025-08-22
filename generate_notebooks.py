@@ -22,7 +22,6 @@ NOTEBOOK_TEMPLATE = {
             "outputs": [],
             "source": [
                 "# Welcome to {title}!\n",
-                "print('Starting {title} module...')"
             ]
         },
         {

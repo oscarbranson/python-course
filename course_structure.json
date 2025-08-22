@@ -1,7 +1,7 @@
 {
   "modules": [
     {
-      "id": "python-basics",
+      "id": "core-python-basics",
       "title": "Python Basics",
       "description": "Variables, data types, control structures, functions",
       "duration": 30,
@@ -11,42 +11,42 @@
       "category": "core"
     },
     {
-      "id": "arrays-numpy",
+      "id": "core-arrays-numpy",
       "title": "Working with Arrays",
       "description": "NumPy fundamentals, array operations, linear algebra",
       "duration": 35,
       "level": "beginner",
-      "prerequisites": ["python-basics"],
+      "prerequisites": ["core-python-basics"],
       "keywords": ["numpy", "arrays", "linear algebra", "indexing"],
       "category": "core"
     },
     {
-      "id": "data-handling",
+      "id": "core-data-handling",
       "title": "Data Handling with Pandas",
       "description": "DataFrames, data cleaning, merging, grouping operations",
       "duration": 40,
       "level": "beginner",
-      "prerequisites": ["python-basics", "arrays-numpy"],
+      "prerequisites": ["core-python-basics", "core-arrays-numpy"],
       "keywords": ["pandas", "dataframes", "data cleaning", "CSV"],
       "category": "core"
     },
     {
-      "id": "basic-plotting",
+      "id": "core-basic-plotting",
       "title": "Basic Plotting",
       "description": "Matplotlib fundamentals, line plots, scatter plots, histograms",
       "duration": 30,
       "level": "beginner",
-      "prerequisites": ["arrays-numpy"],
+      "prerequisites": ["core-arrays-numpy"],
       "keywords": ["matplotlib", "plotting", "visualization", "graphs"],
       "category": "core"
     },
     {
-      "id": "advanced-plotting",
+      "id": "core-advanced-plotting",
       "title": "Advanced Plotting",
       "description": "Seaborn, subplots, styling, publication-quality figures",
       "duration": 35,
       "level": "intermediate",
-      "prerequisites": ["basic-plotting", "data-handling"],
+      "prerequisites": ["core-basic-plotting", "core-data-handling"],
       "keywords": ["seaborn", "subplots", "styling", "publication"],
       "category": "plotting"
     },
@@ -56,7 +56,7 @@
       "description": "Hypothesis testing, distributions, correlation analysis",
       "duration": 40,
       "level": "intermediate",
-      "prerequisites": ["data-handling"],
+      "prerequisites": ["core-data-handling"],
       "keywords": ["statistics", "hypothesis testing", "scipy", "correlation"],
       "category": "statistics"
     },
@@ -66,27 +66,47 @@
       "description": "NetCDF, HDF5, GRIB for geoscience data",
       "duration": 35,
       "level": "intermediate",
-      "prerequisites": ["data-handling"],
+      "prerequisites": ["core-data-handling"],
       "keywords": ["netcdf", "hdf5", "file formats", "xarray"],
       "category": "files"
     },
     {
-      "id": "time-series",
-      "title": "Time Series Analysis",
-      "description": "Datetime handling, resampling, trend analysis, spectral analysis",
-      "duration": 40,
+      "id": "time-datetime",
+      "title": "Working with Dates and Times.",
+      "description": "Datetime parsing and manipulation.",
+      "duration": 20,
       "level": "intermediate",
-      "prerequisites": ["data-handling", "statistical-analysis"],
+      "prerequisites": ["core-data-handling", "statistical-analysis"],
       "keywords": ["time series", "datetime", "trends", "spectral analysis"],
       "category": "statistics"
     },
     {
-      "id": "geospatial",
-      "title": "Geospatial Analysis",
-      "description": "Cartopy, coordinate systems, raster and vector data",
+      "id": "time-series",
+      "title": "Time Series Analysis",
+      "description": "Resampling, trend analysis, spectral analysis",
+      "duration": 30,
+      "level": "intermediate",
+      "prerequisites": ["core-data-handling", "time-datetime", "statistical-analysis"],
+      "keywords": ["time series", "datetime", "trends", "spectral analysis"],
+      "category": "statistics"
+    },
+    {
+      "id": "geospatial-fundamentals",
+      "title": "Mapping Fundamentals",
+      "description": "Making maps. Cartopy, coordinate systems, basemaps.",
       "duration": 40,
       "level": "advanced",
-      "prerequisites": ["advanced-plotting", "file-io"],
+      "prerequisites": ["core-advanced-plotting", "file-io"],
+      "keywords": ["GIS", "cartopy", "projections", "spatial data"],
+      "category": "mapping"
+    },
+    {
+      "id": "geospatial-data",
+      "title": "Geospatial Data",
+      "description": "Spatial raster and vector data. Shapefiles, GeoJSON.",
+      "duration": 40,
+      "level": "advanced",
+      "prerequisites": ["core-advanced-plotting", "file-io"],
       "keywords": ["GIS", "cartopy", "projections", "spatial data"],
       "category": "mapping"
     },
@@ -96,7 +116,7 @@
       "description": "ECMWF/NOAA data, climate indices, anomaly analysis",
       "duration": 40,
       "level": "advanced",
-      "prerequisites": ["file-io", "time-series", "geospatial"],
+      "prerequisites": ["file-io", "time-datetime", "geospatial-fundamentals"],
       "keywords": ["climate", "ECMWF", "NOAA", "indices", "anomalies"],
       "category": "climate"
     },
@@ -106,7 +126,7 @@
       "description": "Phase diagrams, thermodynamic calculations, mineral chemistry",
       "duration": 35,
       "level": "advanced",
-      "prerequisites": ["statistical-analysis", "advanced-plotting"],
+      "prerequisites": ["statistical-analysis", "core-advanced-plotting"],
       "keywords": ["geochemistry", "phase diagrams", "thermodynamics", "minerals"],
       "category": "geochemistry"
     },
@@ -126,7 +146,7 @@
       "description": "CTD data, current analysis, ADCP processing",
       "duration": 40,
       "level": "advanced",
-      "prerequisites": ["time-series", "geospatial"],
+      "prerequisites": ["time-series", "geospatial-fundamentals"],
       "keywords": ["oceanography", "CTD", "currents", "ADCP"],
       "category": "oceanography"
     },
@@ -136,7 +156,7 @@
       "description": "Meteorological data, atmospheric profiles, radiosonde analysis",
       "duration": 35,
       "level": "advanced",
-      "prerequisites": ["time-series", "geospatial"],
+      "prerequisites": ["time-series", "geospatial-fundamentals"],
       "keywords": ["atmosphere", "meteorology", "radiosonde", "profiles"],
       "category": "atmosphere"
     },
@@ -146,7 +166,7 @@
       "description": "Satellite data processing, spectral analysis, image classification",
       "duration": 40,
       "level": "advanced",
-      "prerequisites": ["geospatial", "statistical-analysis"],
+      "prerequisites": ["geospatial-fundamentals", "statistical-analysis"],
       "keywords": ["remote sensing", "satellite", "spectral", "classification"],
       "category": "remote-sensing"
     },
@@ -156,7 +176,7 @@
       "description": "Classification, regression, clustering applied to geoscience problems",
       "duration": 40,
       "level": "advanced",
-      "prerequisites": ["statistical-analysis", "advanced-plotting"],
+      "prerequisites": ["statistical-analysis", "core-advanced-plotting"],
       "keywords": ["machine learning", "classification", "regression", "clustering"],
       "category": "ml"
     },
@@ -166,7 +186,7 @@
       "description": "Differential equations, finite differences, simulation methods",
       "duration": 40,
       "level": "advanced",
-      "prerequisites": ["arrays-numpy", "statistical-analysis"],
+      "prerequisites": ["core-arrays-numpy", "statistical-analysis"],
       "keywords": ["modeling", "simulation", "differential equations", "numerical"],
       "category": "modeling"
     },
@@ -176,7 +196,7 @@
       "description": "Interactive plots, dashboards, web-based visualization",
       "duration": 35,
       "level": "advanced",
-      "prerequisites": ["advanced-plotting", "file-io"],
+      "prerequisites": ["core-advanced-plotting", "file-io"],
       "keywords": ["visualization", "interactive", "dashboards", "plotly"],
       "category": "visualization"
     },
@@ -186,7 +206,7 @@
       "description": "Version control, documentation, publishing workflows",
       "duration": 30,
       "level": "intermediate",
-      "prerequisites": ["python-basics"],
+      "prerequisites": ["core-python-basics"],
       "keywords": ["git", "documentation", "reproducibility", "publishing"],
       "category": "best-practices"
     }
