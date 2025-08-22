@@ -215,18 +215,44 @@ class CourseApp {
                 </div>
                 <div class="card-footer">
                     ${isCompleted ? `
-                        <button class="btn btn-outline-success btn-sm" onclick="app.startModule('${module.id}')">
-                            Review
-                        </button>
+                        <div class="d-flex justify-content-between align-items-center">
+                            ${module.notebook_available ? `
+                                <a href="${module.colab_url}" target="_blank" class="btn btn-outline-success btn-sm">
+                                    <i class="fab fa-google"></i> Review in Colab
+                                </a>
+                                <a href="/download/${module.id}" class="btn btn-outline-secondary btn-sm" title="Download notebook">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                            ` : `
+                                <button class="btn btn-outline-success btn-sm" onclick="app.startModule('${module.id}')">
+                                    Review
+                                </button>
+                            `}
+                        </div>
                     ` : isAvailable ? `
-                        <button class="btn btn-primary btn-sm" onclick="app.startModule('${module.id}')">
-                            ${isInProgress ? 'Continue' : 'Start'}
-                        </button>
-                        ${!isInProgress && this.currentUser ? `
-                        <button class="btn btn-outline-success btn-sm ms-2" onclick="app.markAsCompleted('${module.id}')" title="Mark as completed">
-                            I know this
-                        </button>
-                        ` : ''}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                ${module.notebook_available ? `
+                                    <a href="${module.colab_url}" target="_blank" class="btn btn-primary btn-sm">
+                                        <i class="fab fa-google"></i> ${isInProgress ? 'Continue in Colab' : 'Start in Colab'}
+                                    </a>
+                                ` : `
+                                    <button class="btn btn-primary btn-sm" onclick="app.startModule('${module.id}')">
+                                        ${isInProgress ? 'Continue' : 'Start'}
+                                    </button>
+                                `}
+                                ${this.currentUser ? `
+                                    <button class="btn btn-outline-success btn-sm ms-2" onclick="app.markAsCompleted('${module.id}')" title="Mark as completed">
+                                        ${isInProgress ? 'Mark Complete' : 'I know this'}
+                                    </button>
+                                ` : ''}
+                            </div>
+                            ${module.notebook_available ? `
+                                <a href="/download/${module.id}" class="btn btn-outline-secondary btn-sm" title="Download notebook">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                            ` : ''}
+                        </div>
                     ` : ''}
                 </div>
             </div>
@@ -586,13 +612,22 @@ class CourseApp {
             </div>
             ` : ''}
             <div class="d-grid gap-2">
-                <button class="btn ${isCompleted ? 'btn-outline-success' : 'btn-primary'}" 
-                        onclick="app.startModule('${module.id}')">
-                    ${isCompleted ? 'Review Module' : isInProgress ? 'Continue Module' : 'Start Module'}
-                </button>
-                ${!isCompleted ? `
+                ${module.notebook_available ? `
+                    <a href="${module.colab_url}" target="_blank" class="btn ${isCompleted ? 'btn-outline-success' : 'btn-primary'}">
+                        <i class="fab fa-google"></i> ${isCompleted ? 'Review in Colab' : isInProgress ? 'Continue in Colab' : 'Start in Colab'}
+                    </a>
+                    <a href="/download/${module.id}" class="btn btn-outline-secondary">
+                        <i class="fas fa-download"></i> Download Notebook
+                    </a>
+                ` : `
+                    <button class="btn ${isCompleted ? 'btn-outline-success' : 'btn-primary'}" 
+                            onclick="app.startModule('${module.id}')">
+                        ${isCompleted ? 'Review Module' : isInProgress ? 'Continue Module' : 'Start Module'}
+                    </button>
+                `}
+                ${this.currentUser && !isCompleted ? `
                 <button class="btn btn-outline-secondary" onclick="app.markAsCompleted('${module.id}')">
-                    Mark as Completed
+                    ${isInProgress ? 'Mark Complete' : 'Mark as Completed'}
                 </button>
                 ` : ''}
             </div>
@@ -655,14 +690,27 @@ class CourseApp {
         const module = this.modules.find(m => m.id === moduleId);
         const isCompleted = module.status === 'completed';
         
-        if (isCompleted) {
-            alert(`Reviewing module: ${module.title}\n\nThis would open the Jupyter notebook for review.`);
+        if (module.notebook_available) {
+            if (isCompleted) {
+                alert(`Reviewing module: ${module.title}\n\nClick "Review in Colab" to open the Jupyter notebook in Google Colab for review.`);
+            } else {
+                alert(`Starting module: ${module.title}\n\nClick "Start in Colab" to open the Jupyter notebook in Google Colab.`);
+                
+                // Update progress to in-progress
+                if (this.currentUser && module.status === 'not-started') {
+                    this.updateProgress(moduleId, 'in-progress');
+                }
+            }
         } else {
-            alert(`Starting module: ${module.title}\n\nThis would open the Jupyter notebook for this module.`);
-            
-            // Update progress to in-progress
-            if (this.currentUser && module.status === 'not-started') {
-                this.updateProgress(moduleId, 'in-progress');
+            if (isCompleted) {
+                alert(`Reviewing module: ${module.title}\n\nThis module's notebook is coming soon.`);
+            } else {
+                alert(`Starting module: ${module.title}\n\nThis module's notebook is coming soon.`);
+                
+                // Update progress to in-progress
+                if (this.currentUser && module.status === 'not-started') {
+                    this.updateProgress(moduleId, 'in-progress');
+                }
             }
         }
     }
@@ -891,10 +939,8 @@ class CourseApp {
 
             if (response.ok) {
                 this.currentUser = null;
-                // Reset all module status
-                this.modules.forEach(module => {
-                    module.status = 'not-started';
-                });
+                // Reset all module status and reload data
+                await this.loadCourseData();
                 this.updateLoginStatus();
                 
                 // Update graph if visible
@@ -906,9 +952,8 @@ class CourseApp {
             console.error('Logout error:', error);
             // Fallback logout
             this.currentUser = null;
-            this.modules.forEach(module => {
-                module.status = 'not-started';
-            });
+            // Reset all module status and reload data
+            this.loadCourseData();
             this.updateLoginStatus();
         }
     }
@@ -916,28 +961,27 @@ class CourseApp {
     async checkLoginStatus() {
         // Check if user is already logged in (from session)
         try {
-            const response = await fetch('/api/progress');
-            if (response.ok) {
-                // User is logged in, get their info
-                const modules = await fetch('/api/modules');
-                if (modules.ok) {
-                    const moduleData = await modules.json();
-                    this.modules = moduleData.modules;
-                    this.filteredModules = [...this.modules];
-                    
-                    // Extract user info from first module response (if available)
-                    const hasProgress = moduleData.modules.some(m => m.status !== 'not-started');
-                    if (hasProgress) {
-                        // User is logged in, set a placeholder user object
-                        this.currentUser = { name: 'User', email: 'user@example.com' };
-                    }
-                    
-                    this.updateLoginStatus();
-                    this.renderModules();
-                }
+            // First try to get user info
+            const userResponse = await fetch('/api/user');
+            if (userResponse.ok) {
+                const userData = await userResponse.json();
+                this.currentUser = userData.user;
+                
+                // Load modules with user progress
+                await this.loadCourseData();
+                this.updateLoginStatus();
+                return;
             }
         } catch (error) {
-            console.error('Error checking login status:', error);
+            // User not logged in, that's fine
+        }
+        
+        // If no user session, just load modules without progress
+        try {
+            await this.loadCourseData();
+            this.updateLoginStatus();
+        } catch (error) {
+            console.error('Error loading course data:', error);
         }
     }
 
@@ -950,11 +994,9 @@ class CourseApp {
             loginBtn.style.display = 'none';
             userInfo.style.display = 'block';
             username.textContent = this.currentUser.name;
-            localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
         } else {
             loginBtn.style.display = 'block';
             userInfo.style.display = 'none';
-            localStorage.removeItem('currentUser');
         }
 
         // Update progress overview visibility

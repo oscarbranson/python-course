@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -10,6 +10,10 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-change-in-production')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///course.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# GitHub repository configuration for Colab links
+GITHUB_REPO = "oscarbranson/python-course"  # Replace with your actual repo
+GITHUB_BRANCH = "main"
 
 db = SQLAlchemy(app)
 login_manager = LoginManager()
@@ -95,6 +99,13 @@ def get_modules():
             if progress:
                 progress_status = progress.status
         
+        # Check if notebook file exists
+        notebook_path = f"notebooks/{module.id}.ipynb"
+        notebook_available = os.path.exists(notebook_path)
+        
+        # Generate Colab URL
+        colab_url = f"https://colab.research.google.com/github/{GITHUB_REPO}/blob/{GITHUB_BRANCH}/{notebook_path}"
+        
         module_data = {
             'id': module.id,
             'title': module.title,
@@ -104,7 +115,9 @@ def get_modules():
             'category': module.category,
             'keywords': json.loads(module.keywords),
             'prerequisites': prerequisites,
-            'status': progress_status
+            'status': progress_status,
+            'notebook_available': notebook_available,
+            'colab_url': colab_url
         }
         module_list.append(module_data)
     
@@ -146,6 +159,18 @@ def logout():
     logout_user()
     return jsonify({'message': 'Logged out successfully'})
 
+@app.route('/api/user')
+@login_required
+def get_user_info():
+    """Get current user information"""
+    return jsonify({
+        'user': {
+            'id': current_user.id,
+            'name': current_user.name,
+            'email': current_user.email
+        }
+    })
+
 @app.route('/api/progress', methods=['GET', 'POST'])
 @login_required
 def handle_progress():
@@ -183,6 +208,23 @@ def handle_progress():
         
         db.session.commit()
         return jsonify({'message': 'Progress updated'})
+
+@app.route('/download/<module_id>')
+def download_notebook(module_id):
+    """Download notebook file"""
+    try:
+        notebook_path = f"notebooks/{module_id}.ipynb"
+        if os.path.exists(notebook_path):
+            return send_file(
+                notebook_path,
+                as_attachment=True,
+                download_name=f"{module_id}.ipynb",
+                mimetype='application/json'
+            )
+        else:
+            return jsonify({'error': 'Notebook not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 def init_database():
     """Initialize database with sample data"""
