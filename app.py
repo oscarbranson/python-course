@@ -7,8 +7,8 @@ import os
 from datetime import datetime
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key-change-this'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///course.db'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-change-in-production')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///course.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -35,7 +35,6 @@ class Module(db.Model):
     level = db.Column(db.String(20), nullable=False)  # beginner, intermediate, advanced
     category = db.Column(db.String(50), nullable=False)
     keywords = db.Column(db.Text, nullable=False)  # JSON string
-    notebook_path = db.Column(db.String(200))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class ModulePrerequisite(db.Model):
@@ -63,7 +62,25 @@ def index():
 
 @app.route('/api/modules')
 def get_modules():
-    modules = Module.query.all()
+    # Handle search parameters in the same endpoint
+    query = request.args.get('q', '').lower()
+    category = request.args.get('category', '')
+    
+    modules_query = Module.query
+    
+    if category:
+        modules_query = modules_query.filter_by(category=category)
+    
+    if query:
+        modules_query = modules_query.filter(
+            db.or_(
+                Module.title.ilike(f'%{query}%'),
+                Module.description.ilike(f'%{query}%'),
+                Module.keywords.ilike(f'%{query}%')
+            )
+        )
+    
+    modules = modules_query.all()
     module_list = []
     
     for module in modules:
@@ -92,53 +109,6 @@ def get_modules():
         module_list.append(module_data)
     
     return jsonify({'modules': module_list})
-
-@app.route('/api/search')
-def search_modules():
-    query = request.args.get('q', '').lower()
-    category = request.args.get('category', '')
-    
-    modules_query = Module.query
-    
-    if category:
-        modules_query = modules_query.filter_by(category=category)
-    
-    if query:
-        modules_query = modules_query.filter(
-            db.or_(
-                Module.title.ilike(f'%{query}%'),
-                Module.description.ilike(f'%{query}%'),
-                Module.keywords.ilike(f'%{query}%')
-            )
-        )
-    
-    modules = modules_query.all()
-    
-    # Convert to JSON format (similar to get_modules)
-    results = []
-    for module in modules:
-        prereqs = db.session.query(ModulePrerequisite.prerequisite_id).filter_by(module_id=module.id).all()
-        prerequisites = [p[0] for p in prereqs]
-        
-        progress_status = 'not-started'
-        if current_user.is_authenticated:
-            progress = ModuleProgress.query.filter_by(user_id=current_user.id, module_id=module.id).first()
-            if progress:
-                progress_status = progress.status
-        
-        results.append({
-            'id': module.id,
-            'title': module.title,
-            'description': module.description,
-            'duration': module.duration,
-            'level': module.level,
-            'category': module.category,
-            'keywords': json.loads(module.keywords),
-            'prerequisites': prerequisites,
-            'status': progress_status
-        })
-    
-    return jsonify({'modules': results})
 
 @app.route('/api/register', methods=['POST'])
 def register():
@@ -213,35 +183,6 @@ def handle_progress():
         
         db.session.commit()
         return jsonify({'message': 'Progress updated'})
-
-@app.route('/api/graph-data')
-def get_graph_data():
-    """Return graph data for D3.js visualization"""
-    modules = Module.query.all()
-    prerequisites = ModulePrerequisite.query.all()
-    
-    nodes = []
-    links = []
-    
-    # Create nodes
-    for module in modules:
-        nodes.append({
-            'id': module.id,
-            'title': module.title,
-            'level': module.level,
-            'category': module.category,
-            'description': module.description,
-            'duration': module.duration
-        })
-    
-    # Create links
-    for prereq in prerequisites:
-        links.append({
-            'source': prereq.prerequisite_id,
-            'target': prereq.module_id
-        })
-    
-    return jsonify({'nodes': nodes, 'links': links})
 
 def init_database():
     """Initialize database with sample data"""

@@ -63,23 +63,47 @@ class CourseApp {
         });
     }
 
-    handleSearch(query) {
-        const searchTerm = query.toLowerCase();
-        this.filteredModules = this.modules.filter(module => 
-            module.title.toLowerCase().includes(searchTerm) ||
-            module.description.toLowerCase().includes(searchTerm) ||
-            module.keywords.some(keyword => keyword.toLowerCase().includes(searchTerm))
-        );
-        this.renderModules();
+    async handleSearch(query) {
+        try {
+            const params = new URLSearchParams();
+            if (query) params.append('q', query);
+            
+            const response = await fetch(`/api/modules?${params}`);
+            const data = await response.json();
+            this.filteredModules = data.modules;
+            this.renderModules();
+        } catch (error) {
+            console.error('Error searching modules:', error);
+            // Fallback to client-side filtering
+            const searchTerm = query.toLowerCase();
+            this.filteredModules = this.modules.filter(module => 
+                module.title.toLowerCase().includes(searchTerm) ||
+                module.description.toLowerCase().includes(searchTerm) ||
+                module.keywords.some(keyword => keyword.toLowerCase().includes(searchTerm))
+            );
+            this.renderModules();
+        }
     }
 
-    handleCategoryFilter(category) {
-        if (category === '') {
-            this.filteredModules = [...this.modules];
-        } else {
-            this.filteredModules = this.modules.filter(module => module.category === category);
+    async handleCategoryFilter(category) {
+        try {
+            const params = new URLSearchParams();
+            if (category) params.append('category', category);
+            
+            const response = await fetch(`/api/modules?${params}`);
+            const data = await response.json();
+            this.filteredModules = data.modules;
+            this.renderModules();
+        } catch (error) {
+            console.error('Error filtering modules:', error);
+            // Fallback to client-side filtering
+            if (category === '') {
+                this.filteredModules = [...this.modules];
+            } else {
+                this.filteredModules = this.modules.filter(module => module.category === category);
+            }
+            this.renderModules();
         }
-        this.renderModules();
     }
 
     renderModules() {
@@ -124,9 +148,8 @@ class CourseApp {
             'advanced': 'danger'
         };
 
-        const status = module.status || 'not-started';
-        const isCompleted = status === 'completed';
-        const isInProgress = status === 'in-progress';
+        const isCompleted = module.status === 'completed';
+        const isInProgress = module.status === 'in-progress';
         
         // Check if prerequisites are completed
         const arePrerequisitesMet = this.arePrerequisitesMet(module);
@@ -517,9 +540,8 @@ class CourseApp {
         
         if (!module) return;
 
-        const status = module.status || 'not-started';
-        const isCompleted = status === 'completed';
-        const isInProgress = status === 'in-progress';
+        const isCompleted = module.status === 'completed';
+        const isInProgress = module.status === 'in-progress';
 
         // Get status badge and icon
         const statusBadge = isCompleted ? '<span class="badge bg-success"><i class="fas fa-check-circle"></i> Completed</span>' :
@@ -797,8 +819,8 @@ class CourseApp {
         this.highlightPrerequisites(highlightIds, moduleId);
     }
 
-    showLoginModal() {
-        const modal = new bootstrap.Modal(document.getElementById('loginModal'));
+    showModal(modalId) {
+        const modal = new bootstrap.Modal(document.getElementById(modalId));
         modal.show();
     }
 
@@ -947,8 +969,7 @@ class CourseApp {
             registerModal.hide();
         }
         
-        const modal = new bootstrap.Modal(document.getElementById('loginModal'));
-        modal.show();
+        this.showModal('loginModal');
     }
 
     showRegisterModal() {
@@ -958,8 +979,7 @@ class CourseApp {
             loginModal.hide();
         }
         
-        const modal = new bootstrap.Modal(document.getElementById('registerModal'));
-        modal.show();
+        this.showModal('registerModal');
     }
 
     async handleRegister() {

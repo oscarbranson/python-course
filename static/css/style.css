@@ -81,15 +81,6 @@ body {
     font-size: 0.75rem;
 }
 
-.status-badge-clickable {
-    transition: all 0.2s ease;
-}
-
-.status-badge-clickable:hover {
-    background-color: #28a745 !important;
-    transform: scale(1.05);
-}
-
 /* Graph container styles */
 #graph-view {
     flex: 1;
